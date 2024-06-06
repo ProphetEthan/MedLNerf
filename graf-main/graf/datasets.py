@@ -32,7 +32,7 @@ class ImageDataset(VisionDataset):
 
     @staticmethod
     def _get_files(root_dir):
-        return glob.glob(f'{root_dir}/*.png') + glob.glob(f'{root_dir}/*.jpg')
+        return glob.glob(f'{root_dir}/**/*.png') + glob.glob(f'{root_dir}/**/*.jpg')
 
     def __getitem__(self, idx):
         filename = self.filenames[idx]
@@ -45,6 +45,10 @@ class ImageDataset(VisionDataset):
 class DRR(ImageDataset):
     def __init__(self, *args, **kwargs):
         super(DRR, self).__init__(*args, **kwargs)
+
+    @staticmethod
+    def _get_files(root_dir):
+      return glob.glob(f'{root_dir}/knee_*/*.png')
 
 
 class Carla(ImageDataset):

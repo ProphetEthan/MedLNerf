@@ -1,6 +1,7 @@
 expname: knee_all_360
 data:
-  datadir: /projects/cgw/medical/knee_xrays
+  datadir: /root/yf/mednerf/data/knee
+  type: drr
   imsize: 128
   white_bkgd: False
   radius: 9.5,10.5
@@ -12,4 +13,33 @@ data:
   vmin: 0.32898992833716556 # 70 deg
   vmax: 0.45642212862617093   # 85 deg
 training:
-  nworkers: 0
+  outdir: ./output
+  model_file: model_knee.pt
+  monitoring: tensorboard
+  use_amp: False               # Use automated mixed precision
+  nworkers: 6
+  batch_size: 8
+  chunk: 65536              # 1024*32
+  netchunk: 131072             # 1024*64
+  lr_g: 0.0005
+  lr_d: 0.0001
+  lr_anneal: 0.5
+  lr_anneal_every: 50000,100000,200000
+  equalize_lr: False
+  gan_type: standard
+  reg_type: real
+  reg_param: 10.
+  aug_policy: fliprot         # rotation, fliprot, cropping
+  optimizer: rmsprop
+  n_test_samples_with_same_shape_code: 4
+  take_model_average: true
+  model_average_beta: 0.999
+  model_average_reinit: false
+  restart_every: -1
+  save_best: fid
+  fid_every: 5000             # Valid for FID and KID
+  print_every: 10
+  sample_every: 500
+  save_every: 900
+  backup_every: 50000
+  video_every: 10000

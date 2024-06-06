@@ -1,0 +1,4 @@
+# ninja log v5
+1	28233	1717572129186548477	/root/yf/mednerf/graf-main/submodules/nerf_pytorch/torchsearchsorted/build/temp.linux-x86_64-cpython-38/src/cpu/searchsorted_cpu_wrapper.o	cbc1bc0c72fb835e
+10	27962	1717572158026418523	/root/yf/mednerf/graf-main/submodules/nerf_pytorch/torchsearchsorted/build/temp.linux-x86_64-cpython-38/src/cuda/searchsorted_cuda_wrapper.o	97fc0c35652153f9
+9	64079	1717572194158258598	/root/yf/mednerf/graf-main/submodules/nerf_pytorch/torchsearchsorted/build/temp.linux-x86_64-cpython-38/src/cuda/searchsorted_cuda_kernel.o	6701c049f5f54b5

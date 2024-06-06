@@ -242,7 +242,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, default='model_best.pt', help='model.pt to use for eval')
     parser.add_argument("--save_every", default=50, type=int, help="save video of projections every number of iterations")
     parser.add_argument("--psnr_stop", default=25, type=float, help="stop at this psnr value")
-    parser.add_argument('--img_size', type=int, default=64, help='Use a size of 64 if GPU size <=10GB ')
+    parser.add_argument('--img_size', type=int, default=128, help='Use a size of 64 if GPU size <=10GB ')
 
     args, unknown = parser.parse_known_args()
     device = torch.device("cuda:0")

@@ -78,10 +78,10 @@ def count_trainable_parameters(model):
   return sum([np.prod(p.size()) for p in model_parameters])
 
 
-def save_video(imgs, fname, as_gif=False, fps=24, quality=8):
+def save_video(imgs, fname, as_gif=False, fps=24):
     # convert to np.uint8
     imgs = (255 * np.clip(imgs.permute(0, 2, 3, 1).detach().cpu().numpy() / 2 + 0.5, 0, 1)).astype(np.uint8)
-    imageio.mimwrite(fname, imgs, fps=fps, quality=quality)
+    imageio.mimwrite(fname, imgs, fps=fps, codec='libx264')
     
     if as_gif:  # save as gif, too
         os.system(f'ffmpeg -i {fname} -r 15 '
