@@ -2,6 +2,7 @@ from collections import namedtuple
 import torch
 from torchvision import models as tv
 from IPython import embed
+import torch.nn as nn
 
 class squeezenet(torch.nn.Module):
     def __init__(self, requires_grad=False, pretrained=True):
@@ -178,4 +179,35 @@ class resnet(torch.nn.Module):
         outputs = namedtuple("Outputs", ['relu1','conv2','conv3','conv4','conv5'])
         out = outputs(h_relu1, h_conv2, h_conv3, h_conv4, h_conv5)
 
+        return out
+
+class EfficientNetB0(nn.Module):
+    def __init__(self, requires_grad=False, pretrained=True):
+        super(EfficientNetB0, self).__init__()
+        efficientnet = tv.efficientnet_b0(pretrained=pretrained)
+        
+        self.slice1 = nn.Sequential(*list(efficientnet.features.children())[:2])
+        self.slice2 = nn.Sequential(*list(efficientnet.features.children())[2:3])
+        self.slice3 = nn.Sequential(*list(efficientnet.features.children())[3:5])
+        self.slice4 = nn.Sequential(*list(efficientnet.features.children())[5:7])
+        self.slice5 = nn.Sequential(*list(efficientnet.features.children())[7:])
+        
+        if not requires_grad:
+            for param in self.parameters():
+                param.requires_grad = False
+
+    def forward(self, X):
+        h = self.slice1(X)
+        h_stage1 = h
+        h = self.slice2(h)
+        h_stage2 = h
+        h = self.slice3(h)
+        h_stage3 = h
+        h = self.slice4(h)
+        h_stage4 = h
+        h = self.slice5(h)
+        h_stage5 = h
+        EfficientNetOutputs = namedtuple("EfficientNetOutputs", ['stage1', 'stage2', 'stage3', 'stage4', 'stage5'])
+        out = EfficientNetOutputs(h_stage1, h_stage2, h_stage3, h_stage4, h_stage5)
+        
         return out

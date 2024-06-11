@@ -1,3 +1,2 @@
 cd graf-main
-
-python render_xray_G.py configs/knee.yaml --xray_img_path /root/yf/mednerf/data/knee_test --save_dir ./output  --model /root/yf/mednerf/checkpoints/model_best_knee.pt --save_every 25 --psnr_stop 25 
+CUDA_VISIBLE_DEVICES=0 python render_xray_G.py configs/chest.yaml  --xray_img_path /root/yf/mednerf/data/chest_test --save_dir ../../chest_renderings_eff  --model /root/yf/mednerf/checkpoints/model_best_lf_c.pt --save_every 2500  --psnr_stop 25 

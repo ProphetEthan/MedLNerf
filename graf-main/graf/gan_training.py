@@ -89,7 +89,7 @@ class Evaluator(EvaluatorBase):
                     if rays_i is not None:
                         rays_i = rays_i.permute(1, 0, 2, 3).flatten(1, 2)       # Bx2x(HxW)xC -> 2x(BxHxW)x3
                     rgb_i, disp_i, acc_i, _ = self.generator(z, rays=rays_i)
-
+          
                     reshape = lambda x: x.view(bs, self.generator.H, self.generator.W, x.shape[1]).permute(0, 3, 1, 2)  # (NxHxW)xC -> NxCxHxW
                     rgb.append(reshape(rgb_i).cpu())
                     disp.append(reshape(disp_i).cpu())

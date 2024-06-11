@@ -91,7 +91,7 @@ def get_data(config):
     dset.radius = radius
 
     # compute render poses
-    N = 71
+    N = 72
     theta = 0.5 * (to_theta(config['data']['vmin']) + to_theta(config['data']['vmax']))
     angle_range = (to_phi(config['data']['umin']), to_phi(config['data']['umax']))
     render_poses = get_render_poses(render_radius, angle_range=angle_range, theta=theta, N=N)

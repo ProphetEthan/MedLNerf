@@ -254,7 +254,59 @@ class NeRF(nn.Module):
         self.alpha_linear.weight.data = torch.from_numpy(np.transpose(weights[idx_alpha_linear]))
         self.alpha_linear.bias.data = torch.from_numpy(np.transpose(weights[idx_alpha_linear+1]))
 
+class ConvNeRF(nn.Module):
+    def __init__(self, D=8, W=256, input_ch=3, input_ch_views=3, output_ch=4, skips=[4], use_viewdirs=False):
+        super(ConvNeRF, self).__init__()
+        self.D = D
+        self.W = W
+        self.input_ch = input_ch
+        self.input_ch_views = input_ch_views
+        self.skips = skips
+        self.use_viewdirs = use_viewdirs
 
+        # Define convolutional layers for processing points
+        self.pts_conv_layers = nn.ModuleList(
+            [nn.Conv1d(input_ch, W, kernel_size=1)] + 
+            [nn.Conv1d(W, W, kernel_size=1) if i not in self.skips else nn.Conv1d(W + input_ch, W, kernel_size=1) for i in range(D-1)]
+        )
+
+        # Define convolutional layers for processing view directions
+        self.views_conv_layers = nn.ModuleList([nn.Conv1d(input_ch_views + W, W//2, kernel_size=1)])
+
+        if use_viewdirs:
+            self.feature_linear = nn.Linear(W, W)
+            self.alpha_linear = nn.Linear(W, 1)
+            self.rgb_linear = nn.Linear(W//2, 3)
+        else:
+            self.output_linear = nn.Linear(W, output_ch)
+
+    def forward(self, x):
+        input_pts, input_views = torch.split(x, [self.input_ch, self.input_ch_views], dim=-1)
+        input_pts = input_pts.unsqueeze(-1)  # Add a channel dimension
+        input_views = input_views.unsqueeze(-1)  # Add a channel dimension
+
+        h = input_pts
+        for i, conv in enumerate(self.pts_conv_layers):
+            h = conv(h)
+            h = F.relu(h)
+            if i in self.skips:
+                h = torch.cat([input_pts, h], dim=1)
+
+        if self.use_viewdirs:
+            alpha = self.alpha_conv(h).squeeze(-1)
+            feature = self.feature_conv(h)
+            h = torch.cat([feature, input_views], dim=1)
+
+            for conv in self.views_conv_layers:
+                h = conv(h)
+                h = F.relu(h)
+
+            rgb = self.rgb_conv(h).squeeze(-1)
+            outputs = torch.cat([rgb, alpha], dim=-1)
+        else:
+            outputs = self.output_conv(h).squeeze(-1)
+
+        return outputs
 
 # Ray helpers
 def get_rays(H, W, focal, c2w):

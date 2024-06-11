@@ -13,12 +13,12 @@ data:
   vmin: 0.32898992833716556 # 70 deg
   vmax: 0.45642212862617093   # 85 deg
 training:
-  outdir: ./output
+  outdir: ./output_linetrans2
   model_file: model_knee.pt
   monitoring: tensorboard
   use_amp: False               # Use automated mixed precision
   nworkers: 6
-  batch_size: 8
+  batch_size: 2
   chunk: 65536              # 1024*32
   netchunk: 131072             # 1024*64
   lr_g: 0.0005

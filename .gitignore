@@ -1,3 +1,7 @@
 data/
 graf-main/results/
 graf-main/output/
+pixel-nerf/
+SAX-NeRF/
+graf-main/output*/
+run.sh

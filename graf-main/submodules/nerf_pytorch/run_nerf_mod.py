@@ -12,7 +12,7 @@ from tqdm import tqdm
 from functools import partial
 
 import matplotlib.pyplot as plt
-
+from nerf_pytorch.Lineformer import Lineformer_no_encoder
 from .run_nerf_helpers_mod import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -189,13 +189,15 @@ def create_nerf(args):
 
     output_ch = 5 if args.N_importance > 0 else 4
     skips = [4]
-    model = NeRF(D=args.netdepth, W=args.netwidth,
-                 input_ch=input_ch, output_ch=output_ch, skips=skips,
-                 input_ch_views=input_ch_views, use_viewdirs=(args.use_viewdirs or args.feat_dim_appearance > 0))
+    # model = NeRF(D=args.netdepth, W=args.netwidth,
+    #              input_ch=input_ch, output_ch=output_ch, skips=skips,
+    #              input_ch_views=input_ch_views, use_viewdirs=(args.use_viewdirs or args.feat_dim_appearance > 0))
+    model = Lineformer_no_encoder(D=args.netdepth, N=args.netwidth, input_ch=input_ch, output_ch=output_ch, skips=skips, input_ch_views=input_ch_views).to(device)
     grad_vars = list(model.parameters())
     named_params = list(model.named_parameters())
 
     model_fine = None
+    print(args.N_importance)
     if args.N_importance > 0:
         model_fine = NeRF(D=args.netdepth_fine, W=args.netwidth_fine,
                           input_ch=input_ch, output_ch=output_ch, skips=skips,

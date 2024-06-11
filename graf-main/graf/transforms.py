@@ -1,8 +1,20 @@
 import torch
 from math import sqrt, exp
+import numpy as np
 
 from submodules.nerf_pytorch.run_nerf_helpers_mod import get_rays, get_rays_ortho
 
+def proj_window_partition(x, window_size):
+    h,w = x.shape       # x.shape = [256, 256], window_size = (32, 32)
+    x = x.view(h // window_size[0], window_size[0], w // window_size[1], window_size[1]) # [256, 256] -> [8, 32, 8, 32]
+    windows = x.permute(0, 2, 1, 3).contiguous().view(-1, window_size[0], window_size[1]) # [8, 32, 8, 32] -> [8, 8, 32, 32] -> [64, 32, 32]
+    return windows
+
+def ray_window_partition(x, window_size):
+    h,w,c = x.shape       # x.shape = [256, 256, 8], window_size = (32, 32)
+    x = x.view(h // window_size[0], window_size[0], w // window_size[1], window_size[1], c) # [256, 256, 8] -> [8, 32, 8, 32, 8]
+    windows = x.permute(0, 2, 1, 3, 4).contiguous().view(-1, window_size[0], window_size[1], c) # x: [8, 32, 8, 32, 8] -> [8, 8, 32, 32, 8] -> [64, 32, 32, 8]
+    return windows
 
 class ImgToPatch(object):
     def __init__(self, ray_sampler, hwf):
@@ -20,12 +32,62 @@ class ImgToPatch(object):
                 rgbs_i = torch.nn.functional.grid_sample(img_i.unsqueeze(0), 
                                      pixels_i.unsqueeze(0), mode='bilinear', align_corners=True)[0]
                 rgbs_i = rgbs_i.flatten(1, 2).t()
+            
             rgbs.append(rgbs_i)
 
         rgbs = torch.cat(rgbs, dim=0)       # (B*N)x3
 
         return rgbs
 
+class ImgToPatch_MLG(object):
+    def __init__(self, ray_sampler, hwf, window_size=(32,32), window_num=4, n_rays=512):
+        self.ray_sampler = ray_sampler
+        self.hwf = hwf  # camera intrinsics
+        self.window_size = window_size
+        self.window_num = window_num
+        self.n_rays = n_rays
+
+    def __call__(self, img):
+        rgbs = []
+        for img_i in img: 
+
+            rays = img_i.view(self.hwf[0], self.hwf[1], -1)  # Assuming img_i shape is [H, W, C]
+            projs = torch.ones(self.hwf[0], self.hwf[1])
+
+            rays_window = ray_window_partition(rays, self.window_size)
+            projs_window = proj_window_partition(projs, self.window_size)
+            
+            # 筛选有效窗口
+            projs_window_valid_indx = ((projs_window > 0).sum(dim=-1).sum(dim=-1) == self.window_size[0] * self.window_size[1])
+            select_inds_window = np.random.choice(projs_window_valid_indx.shape[0], size=[self.window_num], replace=False)
+            
+            projs_window_select = projs_window[select_inds_window]  # [window_num, 32, 32]
+            rays_window_select = rays_window[select_inds_window]    # [window_num, 32, 32, 8]
+            
+            selected_rays_window = rays_window_select.reshape(-1, 8)
+            selected_projs_window = projs_window_select.flatten()
+            
+            total_inds = [i for i in range(projs_window.shape[0])]
+            else_inds = [x for x in total_inds if x not in select_inds_window]
+            projs_window_else = projs_window[else_inds]
+            rays_window_else = rays_window[else_inds]
+            
+            else_inds_pixel_valid = projs_window_else > 0
+            
+            rays_else_valid = rays_window_else[else_inds_pixel_valid]
+            projs_else_valid = projs_window_else[else_inds_pixel_valid]
+            
+            else_valid_select_index = np.random.choice(projs_else_valid.shape[0], size=[self.n_rays], replace=False)
+            
+            selected_rays_else = rays_else_valid[else_valid_select_index]
+            selected_projs_else = projs_else_valid[else_valid_select_index]
+            
+          
+            rgbs.append(selected_rays_else)
+    
+        rgbs = torch.cat(rgbs, dim=0)  # (B*N)x3
+
+        return rgbs
 
 class RaySampler(object):
     def __init__(self, N_samples, orthographic=False):

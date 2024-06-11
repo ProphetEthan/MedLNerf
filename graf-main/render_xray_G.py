@@ -139,7 +139,7 @@ def reconstruct(args, config_file):
     ]
     trans = transforms.Compose(transform_list)
 
-    target_xray = glob.glob(os.path.join(args.xray_img_path, '*.png'))
+    target_xray = glob.glob(os.path.join(args.xray_img_path, '**/*.png'))
     target_xray = torch.unsqueeze(trans(Image.open(target_xray[0]).convert('RGB')),0)
 
     #    target_xray = target_xray.repeat(N_samples,1,1,1)
@@ -170,6 +170,10 @@ def reconstruct(args, config_file):
     psnr_value = 0.
 
     pbar = tqdm(total=5000)
+    best_ssim = 0.0
+    best_psnr = 0.0
+    best_re = float('inf')
+
     for iteration in range(5000):
         g_optim.zero_grad()
 
@@ -219,17 +223,27 @@ def reconstruct(args, config_file):
             f"Reconstruction loss g: {log_rec_loss:.4f}")
         pbar.update(1)
 
+        if psnr_value > best_psnr:
+            best_psnr = psnr_value
+
+        if ssim_value > best_ssim:
+            best_ssim = ssim_value
+        
+        if log_rec_loss < best_re:
+            best_re = log_rec_loss
+
         if iteration % args.save_every == args.save_every - 1:
             test(range_phi, render_radius, theta_mean,
                  z, generator_test, N_samples, iteration,
                  img_size)
 
-        if psnr_value > args.psnr_stop:
-            break
+        # if psnr_value > args.psnr_stop:
+        #     break
 
         ssim_value = 0.
         psnr_value = 0.
         log_rec_loss = 0
+    print(f"Best SSIM: {best_ssim:.4f} Best PSNR: {best_psnr:.4f}  Best Reconstruction loss g: {best_re:.4f}")
         
 if __name__ == "__main__":
     # Arguments
@@ -255,6 +269,7 @@ if __name__ == "__main__":
     out_dir = os.path.join(config_file['training']['outdir'], config_file['expname'])
     checkpoint_dir = path.join(out_dir, 'chkpts')
     eval_dir = os.path.join(out_dir, args.save_dir)
+    print(eval_dir)
     os.makedirs(eval_dir, exist_ok=True)
 
     config_file['training']['nworkers'] = 0

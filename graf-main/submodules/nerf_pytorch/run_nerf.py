@@ -13,6 +13,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from nerf_pytorch.run_nerf_helpers import *
+from nerf_pytorch.Lineformer import Lineformer_no_encoder
 
 from nerf_pytorch.load_llff import load_llff_data
 from nerf_pytorch.load_deepvoxels import load_dv_data
@@ -159,14 +160,15 @@ def create_nerf(args):
         embeddirs_fn, input_ch_views = get_embedder(args.multires_views, args.i_embed)
     output_ch = 5 if args.N_importance > 0 else 4
     skips = [4]
-    model = NeRF(D=args.netdepth, W=args.netwidth,
+    model = ConvNeRF(D=args.netdepth, W=args.netwidth,
                  input_ch=input_ch, output_ch=output_ch, skips=skips,
                  input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs).to(device)
+    # model = Lineformer_no_encoder(num_layers=4,hidden_dim=32,skips=[2],out_dim=1,last_activation="sigmoid",bound=0.3, line_size=2, dim_head=4, heads=8, num_blocks=1).to(device)
     grad_vars = list(model.parameters())
 
     model_fine = None
     if args.N_importance > 0:
-        model_fine = NeRF(D=args.netdepth_fine, W=args.netwidth_fine,
+        model_fine = ConvNeRF(D=args.netdepth_fine, W=args.netwidth_fine,
                           input_ch=input_ch, output_ch=output_ch, skips=skips,
                           input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs).to(device)
         grad_vars += list(model_fine.parameters())

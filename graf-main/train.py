@@ -5,6 +5,7 @@ from os import path
 import time
 import copy
 import torch
+from tqdm import tqdm
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
@@ -17,7 +18,7 @@ sys.path.append('submodules')        # needed to make imports work in GAN_stabil
 from graf.gan_training import Trainer, Evaluator
 from graf.config import get_data, build_models, save_config, update_config, build_lr_scheduler
 from graf.utils import count_trainable_parameters, get_nsamples, InfiniteSamplerWrapper
-from graf.transforms import ImgToPatch
+from graf.transforms import ImgToPatch, ImgToPatch_MLG
 
 from GAN_stability.gan_training import utils
 from GAN_stability.gan_training.train import update_average
@@ -107,6 +108,10 @@ if __name__ == '__main__':
 
     # input transform
     img_to_patch = ImgToPatch(generator.ray_sampler, hwfr[:3])
+
+    # img_to_patch = ImgToPatch_MLG(generator.ray_sampler, hwfr[:3])
+
+
 
     # Register modules to checkpoint
     checkpoint_io.register_modules(
@@ -223,14 +228,14 @@ if __name__ == '__main__':
         epoch_idx += 1
         print('Start epoch %d...' % epoch_idx)
 
-        for x_real in train_loader:
+        for x_real in tqdm(train_loader, total=len(train_loader)):
             t_it = time.time()
             it += 1
             generator.ray_sampler.iterations = it   # for scale annealing
 
             # Sample patches for real data
             rgbs = img_to_patch(x_real.to(device))          # N_samples x C
-
+        
             # Discriminator updates
             z = zdist.sample((batch_size,))
             dloss, reg = trainer.discriminator_trainstep(rgbs, y=y, z=z, data_aug=config['data']['augmentation'])

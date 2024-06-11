@@ -48,7 +48,7 @@ class DRR(ImageDataset):
 
     @staticmethod
     def _get_files(root_dir):
-      return glob.glob(f'{root_dir}/knee_*/*.png')
+      return glob.glob(f'{root_dir}/**/*.png')
 
 
 class Carla(ImageDataset):
